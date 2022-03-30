@@ -4,7 +4,7 @@ In this project, the equivalent model of battery will be designed. The parameter
 
 ## Part 0. Thevenin Model
 <p align="center">
-  <img width="560" height="300" src="images/equivalent_cell.PNG">
+  <img width="490" height="260" src="images/equivalent_cell.PNG">
 </p>
 
 - OCV: Open-Circuit Voltage is the voltage of the battery source which is function of z(t), state of charge.
@@ -79,9 +79,30 @@ totDisAh = OCVData.script1.disAh(end) + OCVData.script2.disAh(end) + ...
            OCVData.script3.disAh(end) + OCVData.script4.disAh(end);
 totChgAh = OCVData.script1.chgAh(end) + OCVData.script2.chgAh(end) + ...
            OCVData.script3.chgAh(end) + OCVData.script4.chgAh(end);
-couleff25 = totDisAh/totChgAh
+eta25 = totDisAh/totChgAh
+```
+Coloumbic efficency for other temperature can be obtained by:
+
+<img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}&space;0&space;=&space;\sum_{discharge}&space;i[j]&plus;\sum_{charge\&space;at\&space;T}&space;\eta[j]i[j]&space;&plus;&space;\sum_{charge&space;\&space;at&space;\&space;25}\eta[j]i[j]}">
+
+<img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}&space;\eta(T)=\frac{\sum_{discharge}i[j]}{\sum_{charge&space;\&space;T}i[j]}-\eta(25^oC)\frac{\sum_{charge&space;\&space;25}i[j]}{\sum_{charge&space;\&space;T}i[j]}}">
+
+### Determining total capacity _Q_
+Consider discharging process (script 1 & 2):
+
+<img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}&space;z[0]=1,z[k]=0&space;\rightarrow&space;z[k]&space;=&space;z[0]-\sum_{j=0}^{k-1}\frac{\eta[j]i[j]}{Q}&space;\rightarrow&space;Q&space;=&space;\sum_{j=0}^{k-1}\eta[j]i[j]&space;}">
+
+```Matlab
+Q25 = OCVData.script1.disAh(end) + OCVData.script2.disAh(end) - ...
+      OCVData.script1.chgAh(end) - OCVData.script2.chgAh(end);
 ```
 
+### Determining Open Circuit Voltage with respect to SOC
+There exists discrepancy between OCV for charging and discharging due to the polarization factor.
+Removing the polarization and merging two OCV curves together, we get the estimated OCV values for given state of charge as shown below:
+<p align="center">
+  <img width="400" height="300" src="images/plot_OCV.PNG">
+</p>
 
 ## References
 [1] Plett, Gregory
