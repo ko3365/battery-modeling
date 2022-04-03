@@ -104,6 +104,58 @@ Removing the polarization and merging two OCV curves together, we get the estima
   <img width="400" height="300" src="images/plot_OCV.PNG">
 </p>
 
+## Part 2. Dynamic Data Processing
+Data is captured while exercising cell with demand using the current profile of Urban Dynamometer Driving Schedule:
+- Script 1: Dynamic Discharge
+  - Step 1: Soak fully charged cell at temp T for 2 hours
+  - Step 2: Discharge cell at constant-current at C rate for 6 min (to avoid over voltage)
+  - Step 3: Execute dynamic profiles over SOC range of interest
+- Script 2: Discharge Calibration
+  - Step 4: Soak cell at 25C for 2 hours
+  - Step 5: Bring cell to terminal voltage to vmin by discharging at C/30 rate and remove hysteresis using the dither profile
+- Script 3: Charge Calibration
+  - Step 6: Charge cell using a constant-current C rate (or rate specified by manufacture) until vmax, then maintain voltage constant at Vmax until current drops below C/30. Remove hysteresis using the dither profile. 
+
+getParamESC.m, OCVfromSOCtemp.m -> processDynamic.m -> runProcessDynamic.m
+
+### Load Data
+Load data and then pass the data to the processDynamic function to calculate the parameters
+```Matlab
+load ..\data\P14_DYN_50_P25.mat %load dynamic data
+load ..\data\P14model-ocv.mat %load OCV data
+
+data.script1 = DYNData.script1;
+data.script2 = DYNData.script2;
+data.script3 = DYNData.script3;
+
+model = processDynamic(data,model,1,1)
+```
+
+### Compute SOC and OCV
+
+SOC can be calculated by subtracting 1 (fully charged) by accumulated current divided by capacity:
+
+<img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}z[k]&space;=&space;1-\sum_{j=0}^{k-1}\frac{\eta[k]i[k]}{Q}&space;}">
+
+OCV obtained using the helper function OCVfromSOCtemp
+```Matlab
+OCV = OCVfromSOCtemp(data.z, temp, model);
+```
+
+### Compute R-C Time constant
+Calculated using subspace system identification.
+
+### Compute ir, s, h
+
+<img src ="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}&space;i_R[k]=A_{RC}i_R[k-1]&plus;B_{RC}i[k-1]&space;}">
+<img src ="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}s[k]=\left\{\begin{array}{ll}sgn(i[k])&\quad|i[k]|>0\\s[k-1]&\quad&space;\text{otherwise}\end{array}\right.}">
+<img src ="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}h[k]=A_H[k-1]h[k-1]&plus;(A_H[k-1]-1)sgn(i[k-1])}">
+
+### Solve output parameters using the least square formula:
+<img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}v[k]-OCV(z[k],T[k])=Mh[k]&plus;M_os[k]-\sum_jR_ji_R_j[k]-R_oi[k]}">
+<img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}&space;\begin{bmatrix}&space;\tilde{v[1]}&space;\\&space;\tilde{v[2]}\\&space;\vdots&space;\end{bmatrix}=\begin{bmatrix}h[1]&s[1]&-i[1]&-i^T_{Rj}[1]\\\vdots&\vdots&\vdots&\vdots\end{bmatrix}\begin{bmatrix}M\\M_o\\R_o\\R_j\end{bmatrix}}">
+<img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}&space;X=A\backslash&space;Y}">
+
 ## References
 [1] Plett, Gregory
 Algorithms for Battery Management Systems Specialization. _Coursera_
