@@ -33,7 +33,9 @@
 % The output:
 % - model: A modified model, which now contains the dynamic fields
 %         filled in.
+
 function model = processDynamic(data,model,numpoles,doHyst)
+  addpath ..\helper_function
   global bestcost
   
   % used by fminbnd later on
