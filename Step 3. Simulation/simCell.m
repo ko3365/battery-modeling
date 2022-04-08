@@ -22,15 +22,15 @@ function [vk,rck,hk,zk,sik,OCV] = simCell(ik,T,deltaT,model,z0,iR0,h0)
   R0Param = getParamESC('R0Param',T,model);
   etaParam = getParamESC('etaParam',T,model);
   
-  etaik = ik; etaik(ik<0) = etaParam*ik(ik<0);
+  etaik = ik; etaik(ik<0) = etaParam*ik(ik<0); % Multiplying charging current with Coulombic Efficency
 
   % Simulate the dynamic states of the model
-  rck = zeros(length(RCfact),length(etaik)); rck(:,1) = iR0;
+  rck = zeros(length(RCfact),length(etaik)); rck(:,1) = iR0; %Current through parallel resistor.
   for k = 2:length(ik)
     rck(:,k) = diag(RCfact)*rck(:,k-1) + (1-RCfact)*etaik(k-1);
   end
   rck = rck';
-  zk = z0-cumsum([0;etaik(1:end-1)])*deltaT/(Q*3600); 
+  zk = z0-cumsum([0;etaik(1:end-1)])*deltaT/(Q*3600); % SOC
   if any(zk>1.1)
     warning('Current may have wrong sign as SOC > 110%');
   end
@@ -39,7 +39,7 @@ function [vk,rck,hk,zk,sik,OCV] = simCell(ik,T,deltaT,model,z0,iR0,h0)
   hk=zeros([length(ik) 1]); hk(1) = h0; sik = 0*hk;
   fac=exp(-abs(G*etaik*deltaT/(3600*Q)));
   for k=2:length(ik)
-    hk(k)=fac(k-1)*hk(k-1)-(1-fac(k-1))*sign(ik(k-1));
+    hk(k)=fac(k-1)*hk(k-1)+(fac(k-1)-1)*sign(ik(k-1));
     sik(k) = sign(ik(k));
     if abs(ik(k))<Q/100, sik(k) = sik(k-1); end
   end
@@ -47,5 +47,5 @@ function [vk,rck,hk,zk,sik,OCV] = simCell(ik,T,deltaT,model,z0,iR0,h0)
   % Compute output equation
   OCV = OCVfromSOCtemp(zk,T,model);
   
-  vk = OCV - rck*RParam' - ik.*R0Param + M*hk + M0*sik;
+  vk = OCV - rck*RParam' - ik.*R0Param + M*hk + M0*sik; %Voltage Estimation
 return
