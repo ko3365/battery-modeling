@@ -4,7 +4,7 @@ In this project, the equivalent model of battery will be designed. The parameter
 
 ## Part 0. Thevenin Model
 <p align="center">
-  <img width="490" height="260" src="images/equivalent_cell.PNG">
+  <img width="500" src="images/equivalent_cell.PNG">
 </p>
 
 - OCV: Open-Circuit Voltage is the voltage of the battery source which is function of z(t), state of charge.
@@ -101,7 +101,7 @@ Q25 = OCVData.script1.disAh(end) + OCVData.script2.disAh(end) - ...
 There exists discrepancy between OCV for charging and discharging due to the polarization factor.
 Removing the polarization and merging two OCV curves together, we get the estimated OCV values for given state of charge as shown below:
 <p align="center">
-  <img width="400" height="300" src="images/plot_OCV.PNG">
+  <img width="600" src="images/plot_OCV.PNG">
 </p>
 
 ## Part 2. Dynamic Data Processing
@@ -155,6 +155,36 @@ Calculated using subspace system identification.
 <img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}v[k]-OCV(z[k],T[k])=Mh[k]&plus;M_os[k]-\sum_jR_ji_R_j[k]-R_oi[k]}">
 <img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}&space;\begin{bmatrix}&space;\tilde{v[1]}&space;\\&space;\tilde{v[2]}\\&space;\vdots&space;\end{bmatrix}=\begin{bmatrix}h[1]&s[1]&-i[1]&-i^T_{Rj}[1]\\\vdots&\vdots&\vdots&\vdots\end{bmatrix}\begin{bmatrix}M\\M_o\\R_o\\R_j\end{bmatrix}}">
 <img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}&space;X=A\backslash&space;Y}">
+
+## Part 3. Simulation
+With Hysteresis, the output equation is defined as:
+
+<img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}&space;\hat{v[k]}=OCV(z[k],T[k])&plus;M_os[k]&plus;Mh[k]-\sum_jR_ji_R_j[k]-R_oi[k]}">
+where OCV is obtained from the model, _s[k]_ is obtained from sign of input current.
+
+For a single R-C pair, urrent through the parallel resisor is :
+
+<img src="https://latex.codecogs.com/svg.image?\large&space;{\color{Gray}&space;i_R[k&plus;1]&space;=&space;e^{\frac{-\Delta&space;t}{R_1C_1}}i_{R}[k]&plus;(1-e^{\frac{-\Delta&space;t}{R_1C_1}})i[k]}">
+
+```Matlab
+%...%
+for k = 2:length(ik)
+    rck(:,k) = diag(RCfact)*rck(:,k-1) + (1-RCfact)*etaik(k-1); % Current through parallel resistor.
+end
+%...%
+for k=2:length(ik)
+    hk(k)=fac(k-1)*hk(k-1)+(fac(k-1)-1)*sign(ik(k-1)); %hysteresis
+    sik(k) = sign(ik(k)); % current sign
+    if abs(ik(k))<Q/100, sik(k) = sik(k-1); end
+end
+%...%
+OCV = OCVfromSOCtemp(zk,T,model); % OCV from the model
+%...%
+vk = OCV - rck*RParam' - ik.*R0Param + M*hk + M0*sik; %Voltage Estimation
+```
+<p align="center">
+  <img width="700" src="images/simulation.png">
+</p>
 
 ## References
 [1] Plett, Gregory
