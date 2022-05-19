@@ -2,7 +2,7 @@
 In this project, the equivalent model of battery will be designed. The parameters that describes the battery (**State of Charge**, **Coulombic Efficiency**
 , **Total Capacity**, **Diffusion Voltages**) are calculated by processing voltage and current data obtained through slow charge/discharge process. First, we will discuss the electrical components of Thevenin Model and how each component is related to the battery.
 
-## Part 0. Thevenin Model
+## Part 0. Thevenin Equivalent Model
 <p align="center">
   <img width="500" src="images/equivalent_cell.PNG">
 </p>
